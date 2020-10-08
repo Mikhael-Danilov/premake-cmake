@@ -6,6 +6,7 @@
 --              Manu Evans
 --              Tom van Dijck
 --              Yehonatan Ballas
+--              Mikhael Danilov
 -- Created:     2013/05/06
 -- Copyright:   (c) 2008-2020 Jason Perkins and the Premake project
 --
@@ -32,9 +33,29 @@ function m.files(prj)
 	local tr = project.getsourcetree(prj)
 	tree.traverse(tr, {
 		onleaf = function(node, depth)
-			_p(depth, '"%s"', node.relpath)
+			if node.relpath then
+				_p(depth, '"%s"', node.relpath)
+			end
 		end
 	}, true)
+end
+
+function m.generate_makefile(prj)
+	_p('add_custom_target("%s" ', prj.name)
+
+	_p(')')
+
+	for cfg in project.eachconfig(prj) do
+		-- dependencies
+		local dependencies = project.getdependencies(prj)
+		if #dependencies > 0 then
+			_p('add_dependencies("%s"', prj.name)
+			for _, dependency in ipairs(dependencies) do
+				_p(1, '"%s"', dependency.name)
+			end
+			_p(')')
+		end
+	end
 end
 
 --
@@ -43,10 +64,13 @@ end
 function m.generate(prj)
 	p.utf8()
 
+	print(prj.kind)
 	if prj.kind == 'StaticLib' then
 		_p('add_library("%s"', prj.name)
 	elseif prj.kind == 'SharedLib' then
 		_p('add_library("%s" SHARED', prj.name)
+	elseif prj.kind == 'Makefile' then
+		return m.generate_makefile(prj)
 	else
 		_p('add_executable("%s"', prj.name)
 	end
@@ -77,7 +101,7 @@ function m.generate(prj)
 			_x(1, '$<$<CONFIG:%s>:%s>', cfg.name, includedir)
 		end
 		_p(')')
-		
+
 		-- defines
 		_p('target_compile_definitions("%s" PUBLIC', prj.name)
 		for _, define in ipairs(cfg.defines) do
@@ -134,7 +158,7 @@ function m.generate(prj)
 			if cfg.cppdialect:find('^gnu') == nil then
 				extentions = 'NO'
 			end
-			
+
 			local pic = 'False'
 			if cfg.pic == 'On' then
 				pic = 'True'
