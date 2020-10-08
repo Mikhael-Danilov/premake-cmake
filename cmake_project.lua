@@ -117,7 +117,7 @@ function m.generate(prj)
 
 		-- C++ standard
 		-- only need to configure it specified
-		if cfg.cppdialect ~= '' or cfg.cppdialect == 'Default' then
+		if cfg.cppdialect and (cfg.cppdialect ~= '' or cfg.cppdialect == 'Default') then
 			local standard = {}
 			standard["C++98"] = 98
 			standard["C++11"] = 11
